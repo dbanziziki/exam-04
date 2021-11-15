@@ -5,6 +5,7 @@ int exec_cmd(t_ms **ms, char **envp) {
   pid_t id;
   char **argv;
 
+  (void)envp;
   if (!ms)
     return -1;
   argv = list_to_array((*ms)->args);

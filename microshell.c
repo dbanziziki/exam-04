@@ -99,9 +99,14 @@ void ms_addback(t_ms **ms, t_ms *new) {
 
 int is_modifier(char *s1) { return (!strcmp(s1, "|") || !strcmp(s1, ";")); }
 
-int parse_cmd_and_arg(char *arg, t_ms *ms) {
+int parse_cmd_and_arg(char *arg, t_ms **temp) {
   if (!arg)
     return -1;
+
+  t_ms *ms = *temp;
+  while (ms->next) {
+    ms = ms->next;
+  }
   if (ms->cmd) {
     lst_addback(&ms->args, new_list(arg));
     return (1);
@@ -114,15 +119,13 @@ int parse_cmd_and_arg(char *arg, t_ms *ms) {
 //";" ";" /bin/echo OK ";" ";" ";" /bin/echo OK
 int parse(int argc, char *argv[], t_ms **ms) {
   int i;
-  t_ms *temp;
 
   i = -1;
-  temp = *ms;
   while (++i < argc) {
     if (argv[i] && is_modifier(argv[i])) {
       t_ms *new = new_ms();
       if (!strcmp(argv[i], "|")) {
-        if (!temp->cmd) {
+        if (!(*ms)->cmd) {
           put_error_msg("microshell: syntax error", NULL);
           return -1;
         }
@@ -131,9 +134,8 @@ int parse(int argc, char *argv[], t_ms **ms) {
         new->type = SEMI_COLON;
       }
       ms_addback(ms, new);
-      temp = (*ms)->next;
     } else {
-      parse_cmd_and_arg(argv[i], temp);
+      parse_cmd_and_arg(argv[i], ms);
     }
   }
   return 1;

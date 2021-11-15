@@ -26,7 +26,7 @@ typedef struct s_ms {
   struct s_ms *prev;
 } t_ms;
 
-int parse_cmd_and_arg(char *arg, t_ms *ms);
+int parse_cmd_and_arg(char *arg, t_ms **ms);
 int start(t_ms *ms);
 char **list_to_array(t_list *lst);
 #endif
