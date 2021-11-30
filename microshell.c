@@ -41,6 +41,9 @@ void lst_addback(t_list **list, t_list *new) {
 }
 
 char **list_to_array(t_list *lst) {
+
+  if (!lst)
+    return NULL;
   t_list *temp = lst;
   int size = 0;
   char **res = NULL;
@@ -51,8 +54,11 @@ char **list_to_array(t_list *lst) {
     temp = temp->next;
   }
   res = (char **)malloc(sizeof(char *) * (size + 1));
-  if (!res)
+  if (!res) {
+    put_error_msg("error: fatal", NULL);
+    exit(EXIT_FAILURE);
     return NULL;
+  }
   temp = lst;
   while (++i < size) {
     res[i] = temp->content;
@@ -125,12 +131,13 @@ int parse(int argc, char *argv[], t_ms **ms) {
     if (argv[i] && is_modifier(argv[i])) {
       t_ms *new = new_ms();
       if (!strcmp(argv[i], "|")) {
-        if (!(*ms)->cmd) {
-          put_error_msg("microshell: syntax error", NULL);
-          return -1;
-        }
         new->type = PIPE;
       } else {
+        if ((*ms)->type == START) {
+          free(new);
+          (*ms)->type = SEMI_COLON;
+          continue;
+        }
         new->type = SEMI_COLON;
       }
       ms_addback(ms, new);
@@ -166,6 +173,36 @@ void clear_ms(t_ms **ms) {
   *ms = 0;
 }
 
+void print_cmd_args(t_list *args) {
+  while (args) {
+    printf("[%s]", args->content);
+    args = args->next;
+  }
+  printf("\n");
+}
+
+void print_cmd(t_ms **temp) {
+
+  t_ms *ms = *temp;
+  while (ms) {
+    t_list *args = ms->args;
+    if (ms->type == PIPE) {
+      printf("[ PIPE ]\n");
+      printf("cmd: %s\n", ms->cmd);
+      print_cmd_args(args);
+    } else if (ms->type == SEMI_COLON) {
+      printf("[ SEMI-COLON ]\n");
+      printf("cmd: %s\n", ms->cmd);
+      print_cmd_args(args);
+    } else {
+      printf("[ First cmd ]\n");
+      printf("cmd: %s\n", ms->cmd);
+      print_cmd_args(args);
+    }
+    ms = ms->next;
+  }
+}
+
 int main(int argc, char *argv[], char *envp[]) {
   t_ms *ms;
 
@@ -179,6 +216,7 @@ int main(int argc, char *argv[], char *envp[]) {
   if (parse(argc, &argv[1], &ms) == -1)
     return (127);
   start(ms);
+  // print_cmd(&ms);
   clear_ms(&ms);
   return (0);
 }
