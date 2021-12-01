@@ -1,5 +1,11 @@
 #include "microshell.h"
 
+#ifdef TEST_SH
+#define TEST 1
+#else
+#define TEST 0
+#endif
+
 void reset() { printf("\033[0m"); }
 
 t_list *new_list(char *content) {
@@ -124,16 +130,17 @@ int parse_cmd_and_arg(char *arg, t_ms **temp) {
 
 //";" ";" /bin/echo OK ";" ";" ";" /bin/echo OK
 int parse(int argc, char *argv[], t_ms **ms) {
-  int i;
-
-  i = -1;
+  int i = -1;
   while (++i < argc) {
     if (argv[i] && is_modifier(argv[i])) {
       t_ms *new = new_ms();
       if (!strcmp(argv[i], "|")) {
         new->type = PIPE;
       } else {
-        if ((*ms)->type == START) {
+        t_ms *temp = *ms;
+        while (temp->next)
+          temp = temp->next;
+        if (temp->type == START) {
           free(new);
           (*ms)->type = SEMI_COLON;
           continue;
@@ -203,6 +210,21 @@ void print_cmd(t_ms **temp) {
   }
 }
 
+int ft_cd(t_ms *ms) {
+  char **args = list_to_array(ms->args);
+
+  if (!args[1]) {
+    return 1;
+  }
+  int err = chdir(args[1]);
+  if (err < 0) {
+    put_error_msg("error: cd: cannot change directory to ", args[1]);
+    return 1;
+  }
+  free(args);
+  return 0;
+}
+
 int main(int argc, char *argv[], char *envp[]) {
   t_ms *ms;
 
@@ -211,12 +233,17 @@ int main(int argc, char *argv[], char *envp[]) {
   ms = new_ms();
   if (!ms)
     return (1);
+  int status = 0;
   ms->envp = envp;
   ms->type = START;
   if (parse(argc, &argv[1], &ms) == -1)
     return (127);
-  start(ms);
+  status = start(ms);
   // print_cmd(&ms);
   clear_ms(&ms);
-  return (0);
+  if (TEST) {
+    while (1)
+      ;
+  }
+  return (status);
 }

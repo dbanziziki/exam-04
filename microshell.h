@@ -30,4 +30,5 @@ int parse_cmd_and_arg(char *arg, t_ms **ms);
 int start(t_ms *ms);
 char **list_to_array(t_list *lst);
 void put_error_msg(char *msg, char *arg);
+int ft_cd(t_ms *ms);
 #endif

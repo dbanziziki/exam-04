@@ -2,7 +2,7 @@ NAME = microshell
 
 
 all:
-	@gcc -g exec_cmd.c microshell.c -o $(NAME)
+	@gcc -g -fsanitize=address exec_cmd.c microshell.c -o $(NAME)
 
 fclean:
 	@rm -f $(NAME)

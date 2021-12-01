@@ -1,16 +1,9 @@
 #include "microshell.h"
 
-void free_str_tab(char **tab) {
-  int i = -1;
-  while (tab[++i])
-    free(tab[i]);
-}
-
 int exec_cmd(t_ms **ms, char **envp) {
   t_ms *next;
   pid_t id;
   char **argv;
-  int open = 0;
   int status;
 
   if (!ms || !(*ms))
@@ -24,7 +17,6 @@ int exec_cmd(t_ms **ms, char **envp) {
       exit(EXIT_FAILURE);
       return -1;
     }
-    open = 1;
   }
   id = fork();
   if (id < 0) {
@@ -42,7 +34,7 @@ int exec_cmd(t_ms **ms, char **envp) {
     if (!(*ms)->cmd)
       exit(EXIT_SUCCESS);
     execve((*ms)->cmd, argv, envp);
-    put_error_msg("error: cannot execute executable_that_failed", NULL);
+    put_error_msg("error: cannot execute ", (*ms)->cmd);
     exit(EXIT_FAILURE);
   }
   if ((*ms)->type == PIPE) {
@@ -52,7 +44,7 @@ int exec_cmd(t_ms **ms, char **envp) {
   free(argv);
   waitpid(id, &status, 0);
   int exit_status = WEXITSTATUS(status);
-  return 1;
+  return exit_status;
 }
 
 int start(t_ms *ms) {
@@ -61,10 +53,18 @@ int start(t_ms *ms) {
     return -1;
   char **envp = ms->envp;
   t_ms *temp = ms;
+  int status = 0;
 
   while (ms) {
-    exec_cmd(&ms, envp);
+    if (ms->cmd) {
+      if (!strcmp("cd", ms->cmd)) {
+        status = ft_cd(ms);
+        ms = ms->next;
+        continue;
+      }
+    }
+    status = exec_cmd(&ms, envp);
     ms = ms->next;
   }
-  return (1);
+  return (status);
 }
